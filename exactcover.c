@@ -258,6 +258,10 @@ typedef struct {
 /* .tp_dealloc */
 static void coveringsiter_dtor(coveringsiterobject *self)
 {
+    /* restore matrix */
+    while (--self->solutionSize >= 0)
+        link_row(self->solution[self->solutionSize]);
+
     free_matrix(self->corner);
     PyMem_Del(self->solution);
     PyObject_Del(self);
