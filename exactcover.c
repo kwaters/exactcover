@@ -1,4 +1,39 @@
+/* Copyright (C) 2011 by Kenneth Waters
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE. */
+
 #include "Python.h"
+
+static char exactcover__doc__[] =
+"Exact cover solver.\n"
+"\n"
+"Solves the exact cover problem using Knuth's DLX, using the shortest\n"
+"column first heuristic.\n"
+"\n"
+"Given a universe, U, and a collection of subsets of U, S.  Every\n"
+"subcollection of S which is a partition of U is an exact cover.  Finding\n"
+"an exact cover is NP-Complete.\n"
+"\n"
+"Many constraint satisfaction problems can be expressed in terms of exact\n"
+"cover, making it useful in a variety of situations.\n";
+
+/* #undef CHECK_INVARIANTS */
 
 typedef struct ElementRec Element;
 typedef struct HeaderRec Header;
@@ -36,8 +71,12 @@ struct HeaderRec
     PyObject *object;
 };
 
-#if 0
-void check_row(Element *row)
+/* ------------------------------------------------------------------------ *
+ * Sparse Matrix Representation                                             *
+ * ------------------------------------------------------------------------ */
+
+#if defined(CHECK_INVARIANTS) && !defined(NDEBUG)
+static void check_row(Element *row)
 {
     Element *e = row;
     do {
@@ -47,7 +86,7 @@ void check_row(Element *row)
     } while (e != row);
 }
 
-void check_column(Header *column)
+static void check_column(Header *column)
 {
     int count = 0;
     Element *e = &column->e;
@@ -62,7 +101,7 @@ void check_column(Header *column)
     assert(column->count == count - 1);
 }
 
-void check(Header *corner)
+static void check(Header *corner)
 {
     Element *e;
 
@@ -74,11 +113,10 @@ void check(Header *corner)
         check_column((Header*)e);
     }
 }
+#define CHECK(x) check(x)
+#else
+#define CHECK(x)
 #endif
-
-/* ------------------------------------------------------------------------ *
- * Sparse Matrix Representation                                             *
- * ------------------------------------------------------------------------ */
 
 /* Remove a column and all rows with a '1' in that column from the matrix. */
 static void unlink_column(Header *column)
@@ -170,13 +208,14 @@ static int column_count(Header *corner)
     return count;
 }
 
-/* Finds or inserts a column, returns NULL on comparison failure. */
+/* Finds or inserts a column, returns NULL on failure. */
 static Header *find_column(Header *corner, PyObject *object)
 {
     Header *i;
 
     /* Linear scan of the universe for this object */
-    for (i = (Header *)corner->e.right; i != corner; i = (Header *)i->e.right) {
+    for (i = (Header *)corner->e.right; i != corner;
+         i = (Header *)i->e.right) {
         int cmp = PyObject_RichCompareBool(i->object, object, Py_EQ);
         if (cmp == -1) {
             return NULL;
@@ -187,7 +226,8 @@ static Header *find_column(Header *corner, PyObject *object)
 
     /* New header element. */
     i = PyMem_New(Header, 1);
-    /* TODO: allocation failure */
+    if (!i)
+        return NULL;
     i->e.up = &i->e;
     i->e.down = &i->e;
     i->e.column = i;
@@ -290,52 +330,12 @@ static int coveringsiter_step(coveringsiterobject *self)
 
     /* Add new row. */
     unlink_row(row);
-    // check(self->corner);
+    CHECK(self->corner);
     self->solution[self->solutionSize] = row;
     self->solutionSize++;
 
     return CONTINUE;
 }
-
-#if 0
-#include <stdio.h>
-void show(Header *corner)
-{
-    Header *column = (Header *)corner->e.right;
-    for (; column != corner; column = (Header *)column->e.right) {
-        printf("%s(%d) ", PyString_AS_STRING(PyObject_Repr(column->object)),
-               column->count);
-    }
-    printf("\n");
-
-    column = (Header *)corner->e.right;
-    for (; column != corner; column = (Header *)column->e.right) {
-        Element *row;
-        printf("Column %s:\n", PyString_AS_STRING(PyObject_Repr(column->object)));
-        for (row = column->e.down; row != &column->e; row = row->down) {
-            show_row(row);
-        }
-    }
-}
-
-void show_column(Header *column)
-{
-    printf("%s\n", PyString_AS_STRING(PyObject_Repr(column->object)));
-}
-
-void show_row(Element *row)
-{
-    Element *e;
-
-    printf("row");
-    e = row;
-    do {
-        printf(" %s", PyString_AS_STRING(PyObject_Repr(e->column->object)));
-        e = e->right;
-    } while (e != row);
-    printf("\n");
-}
-#endif
 
 /* backtrack.  Returns -1 if there are no more solutions */
 static int coveringsiter_backup(coveringsiterobject *self)
@@ -343,13 +343,13 @@ static int coveringsiter_backup(coveringsiterobject *self)
     while (self->solutionSize > 0) {
         Element *row = self->solution[self->solutionSize - 1];
         link_row(row);
-        // check(self->corner);
+        CHECK(self->corner);
         row = row->down;
         if (row == &row->column->e) {
             self->solutionSize--;
         } else {
             unlink_row(row);
-            // check(self->corner);
+            CHECK(self->corner);
             self->solution[self->solutionSize - 1] = row;
             return 0;
         }
@@ -378,8 +378,6 @@ static PyObject *coveringsiter_solution(coveringsiterobject *self)
 /* .tp_iternext */
 static PyObject *coveringsiter_next(coveringsiterobject *self)
 {
-    // check(self->corner);
-
     /* We need to backup from the last solution on every new iteration. */
     if (self->first) {
         self->first = 0;
@@ -423,6 +421,18 @@ static PyTypeObject coveringsiter_Type = {
 /* ------------------------------------------------------------------------ *
  * coverings function                                                       *
  * ------------------------------------------------------------------------ */
+static char coverings__doc__[] =
+"Compute exact covers.\n"
+"\n"
+"Returns an iterator that will yield all exact coverings.  This takes one\n"
+"parameter, an interable of subsets.  Each subset should be a sequence.\n"
+"The covers returned by the iterator will be tuples of these subsets.\n"
+"The universe is implied to be the union of all the subsets.\n"
+"\n"
+"While subsets may be mutable, mutating them will have no effect on the\n"
+"results produced.  It is recommended that they remain unchanged during\n"
+"the iteration.\n";
+
 static PyObject *coverings(PyObject *module, PyObject *covers)
 {
     PyObject *cover = NULL;
@@ -495,6 +505,8 @@ static PyObject *coverings(PyObject *module, PyObject *covers)
     }
     Py_CLEAR(coverIt);
 
+    CHECK(corner);
+
     coveringsiter = PyObject_New(coveringsiterobject, &coveringsiter_Type);
     if (!coveringsiter)
         goto error;
@@ -530,14 +542,16 @@ static PyMethodDef exactcovermethods[] = {
     {
         .ml_name = "coverings",
         .ml_meth = (PyCFunction)coverings,
-        .ml_flags = METH_O
+        .ml_flags = METH_O,
+        .ml_doc = coverings__doc__
     },
     { NULL }
 };
 
 PyMODINIT_FUNC initexactcover(void)
 {
-    PyObject *module = Py_InitModule("exactcover", exactcovermethods);
+    PyObject *module = Py_InitModule3("exactcover", exactcovermethods,
+                                      exactcover__doc__);
     if (!module)
         return;
 
