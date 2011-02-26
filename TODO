@@ -1,0 +1,8 @@
+For 1.0:
+- PEP 007 (C89, docstring)
+- Memory leak testing
+- Secondary Columns
+- GC cycle
+
+Future:
+- Consider an xrange style.
