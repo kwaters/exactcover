@@ -1,0 +1,5 @@
+ExactCover 0.1
+
+A CPython extension for solving the exact cover problem.
+
+Uses Knuth's DLX (Dancing Links & Algorithm X).
