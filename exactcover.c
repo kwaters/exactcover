@@ -328,6 +328,19 @@ typedef struct {
     int solutionSize;
 } coverings;
 
+static char coverings__doc__[] =
+"coverings(iterable) -> coverings object\n"
+"\n"
+"Compute exact covers.\n"
+"\n"
+"Return an coverings object whose .next() method returns a tuple of\n"
+"elements from iterable which cover the union of all the elements of\n"
+"iterable.  iterable must yield sequences.\n"
+"\n"
+"While the elements may be mutable, mutating them will have no effect on\n"
+"the results produced.  It is recommended that they remain unchanged\n"
+"during the iteration.\n";
+
 /* Make one solving step, returns an Action.
  *
  * CONTINUE = Some of the universe is uncovered, call this function again.
@@ -540,35 +553,57 @@ static void
 coverings_dealloc(coverings *self)
 {
     coverings_cleanup(self);
-    PyObject_Del(self);
+    Py_TYPE((PyObject *)self)->tp_free((PyObject *)self);
 }
-
-static char coverings__doc__[] =
-"coverings(iterable) -> coverings object\n"
-"\n"
-"Compute exact covers.\n"
-"\n"
-"Return an coverings object whose .next() method returns a tuple of\n"
-"elements from iterable which cover the union of all the elements of\n"
-"iterable.  iterable must yield sequences.\n"
-"\n"
-"While the elements may be mutable, mutating them will have no effect on\n"
-"the results produced.  It is recommended that they remain unchanged\n"
-"during the iteration.\n";
 
 static PyTypeObject coverings_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name = "exactcover.coverings",
-    .tp_basicsize = sizeof(coverings),
-    .tp_dealloc = (destructor)coverings_dealloc,
-    .tp_hash = PyObject_HashNotImplemented,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = coverings__doc__,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)coverings_next,
-    .tp_new = PyType_GenericNew,
-    .tp_alloc = PyType_GenericAlloc,
-    .tp_init = (initproc)coverings_init
+    0,                              /* ob_size */
+    "exactcover.coverings",         /* tp_name */
+    sizeof(coverings),              /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    (destructor)coverings_dealloc,  /* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_compare */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    PyObject_HashNotImplemented,    /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,             /* tp_flags */
+    coverings__doc__,               /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    PyObject_SelfIter,              /* tp_iter */
+    (iternextfunc)coverings_next,   /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    (initproc)coverings_init,       /* tp_init */
+    PyType_GenericAlloc,            /* tp_alloc */
+    PyType_GenericNew,              /* tp_new */
+    0,                              /* tp_free */
+    0,                              /* tp_is_gc */
+    0,                              /* tp_bases */
+    0,                              /* tp_mro */
+    0,                              /* tp_cache */
+    0,                              /* tp_subclasses */
+    0,                              /* tp_weaklist */
+    0                               /* tp_del */
 };
 
 /* ------------------------------------------------------------------------ *
