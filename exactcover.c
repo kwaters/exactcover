@@ -187,6 +187,7 @@ static Header *find_column(Header *corner, PyObject *object)
 
     /* New header element. */
     i = PyMem_New(Header, 1);
+    /* TODO: allocation failure */
     i->e.up = &i->e;
     i->e.down = &i->e;
     i->e.column = i;
