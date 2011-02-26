@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Example pentomino solver.
+"""Example pentominos solver.
 
 Dana Scott studied covering a chessboard without the four center squares with
 one of each of the twelve pentominos.  Scott used a novel backtracking approach
