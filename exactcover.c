@@ -76,7 +76,8 @@ struct HeaderRec
  * ------------------------------------------------------------------------ */
 
 #if defined(CHECK_INVARIANTS) && !defined(NDEBUG)
-static void check_row(Element *row)
+static void
+check_row(Element *row)
 {
     Element *e = row;
     do {
@@ -86,7 +87,8 @@ static void check_row(Element *row)
     } while (e != row);
 }
 
-static void check_column(Header *column)
+static void
+check_column(Header *column)
 {
     int count = 0;
     Element *e = &column->e;
@@ -101,7 +103,8 @@ static void check_column(Header *column)
     assert(column->count == count - 1);
 }
 
-static void check(Header *corner)
+static void
+check(Header *corner)
 {
     Element *e;
 
@@ -119,7 +122,8 @@ static void check(Header *corner)
 #endif
 
 /* Remove a column and all rows with a '1' in that column from the matrix. */
-static void unlink_column(Header *column)
+static void
+unlink_column(Header *column)
 {
     Element *row;
     Element *e;
@@ -139,7 +143,8 @@ static void unlink_column(Header *column)
 }
 
 /* Remove a row from the matrix. */
-static void unlink_row(Element *row)
+static void
+unlink_row(Element *row)
 {
     Element *e = row;
     do {
@@ -150,7 +155,8 @@ static void unlink_row(Element *row)
 
 /* Put a column back into the matrix.  Must be called in the exact reverse
  * order of unlink_column(). */
-static void link_column(Header *column)
+static void
+link_column(Header *column)
 {
     Element *row;
     Element *e;
@@ -171,7 +177,8 @@ static void link_column(Header *column)
 
 /* Put a row back into the matrix.  Must be called in the exact reverse order
  * of link_row(). */
-static void link_row(Element *row)
+static void
+link_row(Element *row)
 {
     Element *e = row->left;
     do {
@@ -182,7 +189,8 @@ static void link_row(Element *row)
 
 /* Return the header for the column with the fewest '1's.  Returns NULL if
  * there are no columns in the matrix */
-static Header *smallest_column(Header *corner)
+static Header *
+smallest_column(Header *corner)
 {
     Header *smallest = NULL;
 
@@ -198,7 +206,8 @@ static Header *smallest_column(Header *corner)
 
 /* Return the number of columns.  Aka, the number of elements in the
  * universe. */
-static int column_count(Header *corner)
+static int
+column_count(Header *corner)
 {
     int count = 0;
     Element *e = corner->e.right;
@@ -209,7 +218,8 @@ static int column_count(Header *corner)
 }
 
 /* Finds or inserts a column, returns NULL on failure. */
-static Header *find_column(Header *corner, PyObject *object)
+static Header *
+find_column(Header *corner, PyObject *object)
 {
     Header *i;
 
@@ -245,8 +255,30 @@ static Header *find_column(Header *corner, PyObject *object)
     return i;
 }
 
+/* Alloc a matrix */
+static Header*
+alloc_matrix()
+{
+    Header *corner = PyMem_New(Header, 1);
+    if (!corner) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    corner->e.up = &corner->e;
+    corner->e.down = &corner->e;
+    corner->e.left = &corner->e;
+    corner->e.right = &corner->e;
+    corner->e.column = corner;
+    corner->e.object = NULL;
+    corner->count = 0;
+    corner->object = NULL;
+
+    return corner;
+}
+
 /* Free a matrix */
-static void free_matrix(Header *corner)
+static void
+free_matrix(Header *corner)
 {
     Header *column;
     Header *next_column;
@@ -279,7 +311,7 @@ static void free_matrix(Header *corner)
 
 
 /* ------------------------------------------------------------------------ *
- * coveringsiter class                                                      *
+ * coverings class                                                      *
  * ------------------------------------------------------------------------ */
 typedef struct {
     PyObject_HEAD
@@ -294,19 +326,7 @@ typedef struct {
      * len(universe) elements. */
     Element **solution;
     int solutionSize;
-} coveringsiterobject;
-
-/* .tp_dealloc */
-static void coveringsiter_dtor(coveringsiterobject *self)
-{
-    /* restore matrix */
-    while (--self->solutionSize >= 0)
-        link_row(self->solution[self->solutionSize]);
-
-    free_matrix(self->corner);
-    PyMem_Del(self->solution);
-    PyObject_Del(self);
-}
+} coverings;
 
 /* Make one solving step, returns an Action.
  *
@@ -314,7 +334,8 @@ static void coveringsiter_dtor(coveringsiterobject *self)
  * BACKUP = The remaining universe cannot be covered, backtrack then call this
  *          function again.
  * SOLUTION = solution contains a covering set. */
-static int coveringsiter_step(coveringsiterobject *self)
+static int
+coverings_step(coverings *self)
 {
     Header *column = NULL;
     Element *row = NULL;
@@ -338,7 +359,8 @@ static int coveringsiter_step(coveringsiterobject *self)
 }
 
 /* backtrack.  Returns -1 if there are no more solutions */
-static int coveringsiter_backup(coveringsiterobject *self)
+static int
+coverings_backup(coverings *self)
 {
     while (self->solutionSize > 0) {
         Element *row = self->solution[self->solutionSize - 1];
@@ -358,7 +380,8 @@ static int coveringsiter_backup(coveringsiterobject *self)
 }
 
 /* Create a tuple of the current solution stack. */
-static PyObject *coveringsiter_solution(coveringsiterobject *self)
+static PyObject *
+coverings_solution(coverings *self)
 {
     PyObject *tuple;
     int i;
@@ -375,29 +398,43 @@ static PyObject *coveringsiter_solution(coveringsiterobject *self)
     return tuple;
 }
 
-/* .tp_iternext */
-static PyObject *coveringsiter_next(coveringsiterobject *self)
+static void
+coverings_cleanup(coverings *self)
+{
+    if (self->corner) {
+        /* restore matrix */
+        while (--self->solutionSize >= 0)
+            link_row(self->solution[self->solutionSize]);
+    }
+
+    free_matrix(self->corner);
+    PyMem_Del(self->solution);
+}
+
+/* .next() */
+static PyObject *
+coverings_next(coverings *self)
 {
     /* We need to backup from the last solution on every new iteration. */
     if (self->first) {
         self->first = 0;
-    } else if (coveringsiter_backup(self) < 0) {
+    } else if (coverings_backup(self) < 0) {
         return NULL;
     }
 
     for (;;) {
-        int action = coveringsiter_step(self);
+        int action = coverings_step(self);
         switch (action) {
         case CONTINUE:
             break;
 
         case BACKUP:
-            if (coveringsiter_backup(self) < 0)
+            if (coverings_backup(self) < 0)
                 return NULL;
             break;
 
         case SOLUTION:
-            return coveringsiter_solution(self);
+            return coverings_solution(self);
         }
     }
 
@@ -405,56 +442,29 @@ static PyObject *coveringsiter_next(coveringsiterobject *self)
     return NULL;
 }
 
-static PyTypeObject coveringsiter_Type = {
-    PyObject_HEAD_INIT(NULL)
-    .tp_name = "converingsiter",
-    .tp_basicsize = sizeof(coveringsiterobject),
-    .tp_dealloc = (destructor)coveringsiter_dtor,
-    .tp_hash = PyObject_HashNotImplemented,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = "doc",
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)coveringsiter_next
-};
-
-
-/* ------------------------------------------------------------------------ *
- * coverings function                                                       *
- * ------------------------------------------------------------------------ */
-static char coverings__doc__[] =
-"Compute exact covers.\n"
-"\n"
-"Returns an iterator that will yield all exact coverings.  This takes one\n"
-"parameter, an interable of subsets.  Each subset should be a sequence.\n"
-"The covers returned by the iterator will be tuples of these subsets.\n"
-"The universe is implied to be the union of all the subsets.\n"
-"\n"
-"While subsets may be mutable, mutating them will have no effect on the\n"
-"results produced.  It is recommended that they remain unchanged during\n"
-"the iteration.\n";
-
-static PyObject *coverings(PyObject *module, PyObject *covers)
+/* .__init__() */
+static int
+coverings_init(coverings *self, PyObject *args, PyObject *kwds)
 {
+    PyObject *covers = NULL;
     PyObject *cover = NULL;
     PyObject *coverIt = NULL;
     PyObject *elem = NULL;
     PyObject *it = NULL;
 
-    coveringsiterobject *coveringsiter = NULL;
-
-    Header *corner = PyMem_New(Header, 1);
-    if (!corner) {
-        PyErr_NoMemory();
+    if (kwds && PyDict_Size(kwds) != 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "coverings does not take keyword arguments");
         goto error;
     }
-    corner->e.up = &corner->e;
-    corner->e.down = &corner->e;
-    corner->e.left = &corner->e;
-    corner->e.right = &corner->e;
-    corner->e.column = corner;
-    corner->e.object = NULL;
-    corner->count = 0;
-    corner->object = NULL;
+    if (!PyArg_ParseTuple(args, "O:coverings", &covers))
+        goto error;
+
+    coverings_cleanup(self);
+
+    self->corner = alloc_matrix();
+    if (!self->corner)
+        goto error;
 
     if (!(coverIt = PyObject_GetIter(covers)))
         goto error;
@@ -465,7 +475,7 @@ static PyObject *coverings(PyObject *module, PyObject *covers)
             goto error;
         while ((elem = PyIter_Next(it))) {
             Element *e = NULL;
-            Header *column = find_column(corner, elem);
+            Header *column = find_column(self->corner, elem);
             if (!column)
                 goto error;
 
@@ -505,46 +515,66 @@ static PyObject *coverings(PyObject *module, PyObject *covers)
     }
     Py_CLEAR(coverIt);
 
-    CHECK(corner);
+    CHECK(self->corner);
 
-    coveringsiter = PyObject_New(coveringsiterobject, &coveringsiter_Type);
-    if (!coveringsiter)
-        goto error;
-    coveringsiter->corner = corner;
-    coveringsiter->first = 1;
-    coveringsiter->solution = PyMem_New(Element *, column_count(corner));
-    coveringsiter->solutionSize = 0;
-
-    if (!coveringsiter->solution) {
-        /* The dtor will free corner. */
-        corner = NULL;
+    self->first = 1;
+    self->solution = PyMem_New(Element *, column_count(self->corner));
+    self->solutionSize = 0;
+    if (!self->solution) {
         PyErr_NoMemory();
         goto error;
     }
 
-    return (PyObject *)coveringsiter;
+    return 0;
 
 error:
-    free_matrix(corner);
-    Py_XDECREF(coveringsiter);
     Py_XDECREF(cover);
     Py_XDECREF(coverIt);
     Py_XDECREF(elem);
     Py_XDECREF(it);
-    return NULL;
+    return -1;
 }
 
+/* .tp_dealloc */
+static void
+coverings_dealloc(coverings *self)
+{
+    coverings_cleanup(self);
+    PyObject_Del(self);
+}
+
+static char coverings__doc__[] =
+"coverings(iterable) -> coverings object\n"
+"\n"
+"Compute exact covers.\n"
+"\n"
+"Return an coverings object whose .next() method returns a tuple of\n"
+"elements from iterable which cover the union of all the elements of\n"
+"iterable.  iterable must yield sequences.\n"
+"\n"
+"While the elements may be mutable, mutating them will have no effect on\n"
+"the results produced.  It is recommended that they remain unchanged\n"
+"during the iteration.\n";
+
+static PyTypeObject coverings_Type = {
+    PyObject_HEAD_INIT(NULL)
+    .tp_name = "exactcover.coverings",
+    .tp_basicsize = sizeof(coverings),
+    .tp_dealloc = (destructor)coverings_dealloc,
+    .tp_hash = PyObject_HashNotImplemented,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = coverings__doc__,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)coverings_next,
+    .tp_new = PyType_GenericNew,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_init = (initproc)coverings_init
+};
 
 /* ------------------------------------------------------------------------ *
  * Module init                                                              *
  * ------------------------------------------------------------------------ */
 static PyMethodDef exactcovermethods[] = {
-    {
-        .ml_name = "coverings",
-        .ml_meth = (PyCFunction)coverings,
-        .ml_flags = METH_O,
-        .ml_doc = coverings__doc__
-    },
     { NULL }
 };
 
@@ -555,6 +585,11 @@ PyMODINIT_FUNC initexactcover(void)
     if (!module)
         return;
 
-    if (PyType_Ready(&coveringsiter_Type) < 0)
+    if (PyType_Ready(&coverings_Type) < 0)
+        return;
+
+    Py_INCREF(&coverings_Type);
+    if (PyModule_AddObject(module,
+                           "coverings", (PyObject *)&coverings_Type) < 0)
         return;
 }
