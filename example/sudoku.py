@@ -30,7 +30,6 @@ There are 364 elements in the universe.
 Each subset contains 4 elements, and represents one way to fill in a cell.
 
 """
-
 import pprint
 
 import exactcover
