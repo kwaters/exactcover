@@ -147,15 +147,15 @@ def main():
 
     print "Example covering:"
     # Take the first result from the iterator.
-    solution = exactcover.coverings(m).next()
+    solution = exactcover.Coverings(m).next()
     pprint.pprint(solution)
     print
     print solution_str(solution)
     print
 
     # Count the number of results returned by the iterator.
-    print "There are {0} unique coverings.".format(
-        sum(1 for x in exactcover.coverings(m)))
+    print "There are {0} unique tilings.".format(
+        sum(1 for x in exactcover.Coverings(m)))
 
 
 if __name__ == '__main__':

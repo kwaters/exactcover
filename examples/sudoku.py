@@ -108,7 +108,7 @@ def sudoku(puzzle):
     print
 
     m = sudoku_matrix(sample_puzzle)
-    solution = exactcover.coverings(m).next()
+    solution = exactcover.Coverings(m).next()
 
     print "Solution partition:"
     pprint.pprint(solution)
