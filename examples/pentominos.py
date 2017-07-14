@@ -120,7 +120,7 @@ def matrix():
     b = board()
 
     covers = []
-    for name, shape in pentominos.iteritems():
+    for name, shape in pentominos.items():
         for rotation in rotations(shape):
             for position in positions(rotation, 8, 8, b):
                 covers.append([name] + sorted(position))
