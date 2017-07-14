@@ -644,18 +644,21 @@ static PyMethodDef exactcovermethods[] = {
     { NULL }
 };
 
-PyMODINIT_FUNC initexactcover(void)
+MOD_INIT(_exactcover)
 {
-    PyObject *module = Py_InitModule3("exactcover", exactcovermethods,
-                                      exactcover__doc__);
+    PyObject *module;
+    MOD_DEF(module, "_exactcover",  exactcovermethods, exactcover__doc__)
+
     if (!module)
-        return;
+        return MOD_ERROR_VAL;
 
     if (PyType_Ready(&Coverings_Type) < 0)
-        return;
+        return MOD_ERROR_VAL;
 
     Py_INCREF(&Coverings_Type);
     if (PyModule_AddObject(module,
                            "Coverings", (PyObject *)&Coverings_Type) < 0)
-        return;
+        return MOD_ERROR_VAL;
+
+    return MOD_SUCCESS_VAL(m);
 }
