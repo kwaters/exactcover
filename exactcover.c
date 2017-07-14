@@ -660,5 +660,5 @@ MOD_INIT(_exactcover)
                            "Coverings", (PyObject *)&Coverings_Type) < 0)
         return MOD_ERROR_VAL;
 
-    return MOD_SUCCESS_VAL(m);
+    return MOD_SUCCESS_VAL(module);
 }
