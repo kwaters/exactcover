@@ -3,7 +3,9 @@ python:
   - "2.7"
   - "3.4"
   - "nightly"
-script:
+install:
   - python setup.py build
+  - python setup.py install
+script:
   - python examples/pentominos.py
   - python examples/sudoku.py
