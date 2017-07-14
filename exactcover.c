@@ -588,8 +588,7 @@ Coverings_dealloc(Coverings *self)
 static const long Coverings_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
 
 static PyTypeObject Coverings_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    0,                                       /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)           /* ob_size == 0 */
     "exactcover.Coverings",                  /* tp_name */
     sizeof(Coverings),                       /* tp_basicsize */
     0,                                       /* tp_itemsize */
