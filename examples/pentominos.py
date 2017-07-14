@@ -149,7 +149,7 @@ def main():
 
     print("Example covering:")
     # Take the first result from the iterator.
-    solution = exactcover.Coverings(m).next()
+    solution = next(exactcover.Coverings(m))
     pprint.pprint(solution)
     print()
     print(solution_str(solution))
