@@ -97,8 +97,8 @@ def positions(shape, width, height, world):
     'width' and 'height' are the maximum extents of world.
 
     """
-    for y in xrange(height):
-        for x in xrange(width):
+    for y in range(height):
+        for x in range(width):
             new_shape = [(x + xx, y + yy) for xx, yy in shape]
             if set(new_shape).issubset(world):
                 yield new_shape
@@ -110,7 +110,7 @@ def board():
     The board is a standard 8x8 chess board with the center 4 squares removed.
 
     """
-    b = set((x, y) for x in xrange(8) for y in xrange(8)
+    b = set((x, y) for x in range(8) for y in range(8)
             if not (3 <= x < 5 and 3 <= y < 5))
     return b
 
@@ -129,7 +129,7 @@ def matrix():
 
 def solution_str(solution):
     """Turn a covering into a string picture representation."""
-    grid = [[' ' for i in xrange(8)] for j in xrange(8)]
+    grid = [[' ' for i in range(8)] for j in range(8)]
 
     # Mark unoccupied squares.
     for x, y in board():

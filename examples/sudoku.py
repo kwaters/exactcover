@@ -96,7 +96,7 @@ def sudoku_matrix(puzzle):
 
 def solution_str(solution):
     """Turn a puzzle solution into a 2d string representation."""
-    grid = [['' for i in xrange(9)] for j in xrange(9)]
+    grid = [['' for i in range(9)] for j in range(9)]
     for row in solution:
         (x, y), (_, _, c), _, _, = row
         grid[y][x] = c
