@@ -647,7 +647,7 @@ static PyMethodDef exactcovermethods[] = {
 MOD_INIT(_exactcover)
 {
     PyObject *module;
-    MOD_DEF(module, "_exactcover",  exactcovermethods, exactcover__doc__)
+    MOD_DEF(module, "_exactcover",  exactcover__doc__, exactcovermethods)
 
     if (!module)
         return MOD_ERROR_VAL;
