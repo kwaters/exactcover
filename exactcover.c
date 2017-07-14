@@ -20,6 +20,8 @@
 
 #include "Python.h"
 
+#include "compatibility23.include.c"
+
 static char exactcover__doc__[] =
 "Exact cover solver.\n"
 "\n"
