@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # Copyright (C) 2011 by Kenneth Waters
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,6 +30,8 @@ There are 364 elements in the universe.
 Each subset contains 4 elements, and represents one way to fill in a cell.
 
 """
+from __future__ import print_function
+
 import pprint
 
 import exactcover
@@ -94,7 +96,7 @@ def sudoku_matrix(puzzle):
 
 def solution_str(solution):
     """Turn a puzzle solution into a 2d string representation."""
-    grid = [['' for i in xrange(9)] for j in xrange(9)]
+    grid = [['' for i in range(9)] for j in range(9)]
     for row in solution:
         (x, y), (_, _, c), _, _, = row
         grid[y][x] = c
@@ -103,18 +105,18 @@ def solution_str(solution):
 
 def sudoku(puzzle):
     """Solve a sudoku puzzle."""
-    print "Solving puzzle:"
-    print '\n'.join(puzzle.strip().split())
-    print
+    print("Solving puzzle:")
+    print('\n'.join(puzzle.strip().split()))
+    print()
 
     m = sudoku_matrix(sample_puzzle)
-    solution = exactcover.Coverings(m).next()
+    solution = next(exactcover.Coverings(m))
 
-    print "Solution partition:"
+    print("Solution partition:")
     pprint.pprint(solution)
-    print
-    print "Solved puzzle:"
-    print solution_str(solution)
+    print()
+    print("Solved puzzle:")
+    print(solution_str(solution))
 
 
 def main():

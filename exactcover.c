@@ -20,6 +20,8 @@
 
 #include "Python.h"
 
+#include "compatibility23.include.c"
+
 static char exactcover__doc__[] =
 "Exact cover solver.\n"
 "\n"
@@ -586,8 +588,7 @@ Coverings_dealloc(Coverings *self)
 static const long Coverings_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
 
 static PyTypeObject Coverings_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                       /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)           /* ob_size == 0 */
     "exactcover.Coverings",                  /* tp_name */
     sizeof(Coverings),                       /* tp_basicsize */
     0,                                       /* tp_itemsize */
@@ -642,18 +643,21 @@ static PyMethodDef exactcovermethods[] = {
     { NULL }
 };
 
-PyMODINIT_FUNC initexactcover(void)
+MOD_INIT(exactcover)
 {
-    PyObject *module = Py_InitModule3("exactcover", exactcovermethods,
-                                      exactcover__doc__);
+    PyObject *module;
+    MOD_DEF(module, "exactcover",  exactcover__doc__, exactcovermethods)
+
     if (!module)
-        return;
+        return MOD_ERROR_VAL;
 
     if (PyType_Ready(&Coverings_Type) < 0)
-        return;
+        return MOD_ERROR_VAL;
 
     Py_INCREF(&Coverings_Type);
     if (PyModule_AddObject(module,
                            "Coverings", (PyObject *)&Coverings_Type) < 0)
-        return;
+        return MOD_ERROR_VAL;
+
+    return MOD_SUCCESS_VAL(module);
 }
