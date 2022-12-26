@@ -14,7 +14,7 @@ def print_solution(n, solution):
         a[row][col] = "*"
 
     for row in a:
-        print "".join(row)
+        print("".join(row))
 
 def n_queens(n):
     matrix = []
@@ -32,7 +32,7 @@ def n_queens(n):
     secondary = set(( "d%d" % i for i in range(2*n-1) ))
     secondary.update(set(( "a%d" % i for i in range(2*n-1) )))
 
-    solution = exactcover.Coverings(matrix, secondary).next()
+    solution = next(exactcover.Coverings(matrix, secondary))
     print_solution(n, solution)
 
 def main():

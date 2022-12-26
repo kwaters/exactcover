@@ -606,54 +606,21 @@ Coverings_dealloc(Coverings *self)
 static const long Coverings_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
 
 static PyTypeObject Coverings_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                       /* ob_size */
-    "exactcover.Coverings",                  /* tp_name */
-    sizeof(Coverings),                       /* tp_basicsize */
-    0,                                       /* tp_itemsize */
-    (destructor)Coverings_dealloc,           /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                       /* tp_getattr */
-    0,                                       /* tp_setattr */
-    0,                                       /* tp_compare */
-    0,                                       /* tp_repr */
-    0,                                       /* tp_as_number */
-    0,                                       /* tp_as_sequence */
-    0,                                       /* tp_as_mapping */
-    PyObject_HashNotImplemented,             /* tp_hash */
-    0,                                       /* tp_call */
-    0,                                       /* tp_str */
-    0,                                       /* tp_getattro */
-    0,                                       /* tp_setattro */
-    0,                                       /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    Coverings__doc__,                        /* tp_doc */
-    (traverseproc)Coverings_traverse,        /* tp_traverse */
-    0,                                       /* tp_clear */
-    0,                                       /* tp_richcompare */
-    0,                                       /* tp_weaklistoffset */
-    PyObject_SelfIter,                       /* tp_iter */
-    (iternextfunc)Coverings_next,            /* tp_iternext */
-    0,                                       /* tp_methods */
-    0,                                       /* tp_members */
-    0,                                       /* tp_getset */
-    0,                                       /* tp_base */
-    0,                                       /* tp_dict */
-    0,                                       /* tp_descr_get */
-    0,                                       /* tp_descr_set */
-    0,                                       /* tp_dictoffset */
-    (initproc)Coverings_init,                /* tp_init */
-    PyType_GenericAlloc,                     /* tp_alloc */
-    PyType_GenericNew,                       /* tp_new */
-    0,                                       /* tp_free */
-    0,                                       /* tp_is_gc */
-    0,                                       /* tp_bases */
-    0,                                       /* tp_mro */
-    0,                                       /* tp_cache */
-    0,                                       /* tp_subclasses */
-    0,                                       /* tp_weaklist */
-    0                                        /* tp_del */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "exactcover.Coverings",
+    .tp_basicsize = sizeof(Coverings),
+    .tp_doc = PyDoc_STR(Coverings__doc__),
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
+    .tp_dealloc = (destructor)Coverings_dealloc,
+    .tp_traverse = (traverseproc)Coverings_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)Coverings_next,
+    .tp_init = (initproc)Coverings_init,
+    .tp_hash = PyObject_HashNotImplemented,
+    .tp_flags = Coverings_flags,
 };
+
 
 /* ------------------------------------------------------------------------ *
  * Module init                                                              *
@@ -662,18 +629,27 @@ static PyMethodDef exactcovermethods[] = {
     { NULL }
 };
 
-PyMODINIT_FUNC initexactcover(void)
+static struct PyModuleDef module_def = {
+    PyModuleDef_HEAD_INIT,
+    "exactcover",
+    exactcover__doc__,
+    -1,
+    exactcovermethods
+};
+
+PyMODINIT_FUNC PyInit_exactcover(void)
 {
-    PyObject *module = Py_InitModule3("exactcover", exactcovermethods,
-                                      exactcover__doc__);
+    PyObject *module = PyModule_Create(&module_def);
     if (!module)
-        return;
+        return NULL;
 
     if (PyType_Ready(&Coverings_Type) < 0)
-        return;
+        return NULL;
 
     Py_INCREF(&Coverings_Type);
     if (PyModule_AddObject(module,
                            "Coverings", (PyObject *)&Coverings_Type) < 0)
-        return;
+        return NULL;
+
+    return module;
 }
