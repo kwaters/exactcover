@@ -71,7 +71,7 @@ def sudoku_matrix(puzzle):
             'x': x + 1,
             'y': y + 1,
             'c': c,
-            'b': 3 * (y / 3) + x / 3 + 1
+            'b': 3 * (y // 3) + x // 3 + 1
         }
         m.append(((x, y),
             'r{y}{c}'.format(**d),
@@ -94,7 +94,7 @@ def sudoku_matrix(puzzle):
 
 def solution_str(solution):
     """Turn a puzzle solution into a 2d string representation."""
-    grid = [['' for i in xrange(9)] for j in xrange(9)]
+    grid = [['' for i in range(9)] for j in range(9)]
     for row in solution:
         (x, y), (_, _, c), _, _, = row
         grid[y][x] = c
@@ -103,18 +103,18 @@ def solution_str(solution):
 
 def sudoku(puzzle):
     """Solve a sudoku puzzle."""
-    print "Solving puzzle:"
-    print '\n'.join(puzzle.strip().split())
-    print
+    print("Solving puzzle:")
+    print('\n'.join(puzzle.strip().split()))
+    print()
 
     m = sudoku_matrix(sample_puzzle)
-    solution = exactcover.Coverings(m).next()
+    solution = next(exactcover.Coverings(m))
 
-    print "Solution partition:"
+    print("Solution partition:")
     pprint.pprint(solution)
-    print
-    print "Solved puzzle:"
-    print solution_str(solution)
+    print()
+    print("Solved puzzle:")
+    print(solution_str(solution))
 
 
 def main():
